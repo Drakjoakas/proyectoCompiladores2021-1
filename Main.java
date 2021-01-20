@@ -9,15 +9,18 @@ public class Main {
 		BufferedReader br = new BufferedReader(fr);
 		lexer = new Yylex(br);
 		parser = new Parser(lexer);
+		
 		try {
 			parser.programa();
 			if(parser.currentToken == 0) {
 				System.out.println("Cadena terminada");
+				br.close();
+				fr.close();
 			}else{
 				System.out.println("Error");
 			}
 		}catch(ParserException p){
-			System.out.println("Error en el parser");
+			System.out.println(p.getMessage() + "~" +Integer.toString(p.getStackTrace()[0].getLineNumber()));
 		}
 	}
 }

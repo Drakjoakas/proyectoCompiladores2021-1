@@ -15,16 +15,10 @@ Num cuenta: 315206447
 %line
 %column
 %unicode
-%int
-%eof{ //cerrando el filewriter y el printwriter
-	try{
-			this.fichero.close();
-			this.pw.close();
-		}catch (Exception e) {
-			System.out.println("Ocurrio un error");	
-		}
-	
-%eof}
+%type Token
+%eofval{ //cerrando el filewriter y el printwriter
+	return new Token(0);
+%eofval}
 
 %{
 	FileWriter fichero;
@@ -58,8 +52,10 @@ Decimal = {Deci1} | {Deci2} | {Deci3} | {Deci4}
 Simbolos = [!”#$%&/()=?¡@¬|°´+{}"[""]"\-.,;:_\^`~<>'¿\*¨] 
 Contenido = ([a-zA-Z] | {numero} | {espacio} | {Simbolos})* 
 Cadena = \"{Contenido}\" | \'{Contenido}\' 
-OpAritmetico = "++" | "--" 
-OpLogicos = < | > 
+MasMas = "++"
+MenosMenos = "--"
+Mayor = >
+Menor = < 
 OpAsignacion = "=" 
 ParentesisAbre = "("
 ParentesisCierra = ")"
@@ -99,298 +95,261 @@ case1 = "case"
 default1 = "default"
 true1 = "true"
 false1 = "false"
+return1 = "return"
 
 %%
-//Estados para el análisis léxico
+//'Estados para el análisis léxico
 
 <YYINITIAL>{  
-  {int1}  { 	
-						this.pw.println("<int,"+yytext()+">");
-												System.out.println("1");
-												return 1;
-								}
-  {float1} { 	
-						this.pw.println("<float,"+yytext()+">");
-												System.out.println("2");
-												return 2;
-								}
+	{int1}  { 	
+		System.out.println("1");
+		return new Token(1);
+	}
+ 	{float1} { 	
+		System.out.println("2");
+		return new Token(2);
+	}
 
-  {char1} { 	
-						this.pw.println("<char,"+yytext()+">");
-												System.out.println("3");
-												return 3;
-								}
+   	{char1} { 	
+		System.out.println("3");
+		return new Token(3);
+	}
 								
-  {double1} { 	
-						this.pw.println("<double,"+yytext()+">");
-												System.out.println("4");
-												return 4;
-								}
+   	{double1} { 	
+		System.out.println("4");
+		return new Token(4);
+	}
 								
-  {void1} { 	
-						this.pw.println("<void,"+yytext()+">");
-												System.out.println("5");
-												return 5;
-								}		
+    {void1} { 	
+		System.out.println("5");
+		return new Token(5);
+	}		
 								
-  {func} { 	
-						this.pw.println("<func,"+yytext()+">");
-												System.out.println("6");
-												return 6;
-								}
+    {func} { 	
+		System.out.println("6");
+		return new Token(6);
+	}
 
-  {if1} { 	
-						this.pw.println("<if,"+yytext()+">");
-												System.out.println("7");
-												return 7;
-								}
+    {if1} { 	
+		System.out.println("7");
+		return new Token(7);
+	}
 
-  {else1} { 	
-						this.pw.println("<else,"+yytext()+">");
-												System.out.println("8");
-												return 8;
-								}
+    {else1} { 	
+		System.out.println("8");
+		return new Token(8);
+	}
 
-  {while1} { 	
-						this.pw.println("<while,"+yytext()+">");
-												System.out.println("9");
-												return 9;
-								}								
+    {while1} { 	
+		System.out.println("9");
+		return new Token(9);
+	}									
 
-  {do1} { 	
-						this.pw.println("<do,"+yytext()+">");
-												System.out.println("10");
-												return 10;
-								}								
+    {do1} { 	
+		System.out.println("10");
+		return new Token(10);
+	}								
 
-  {break1} { 	
-						this.pw.println("<break,"+yytext()+">");
-												System.out.println("11");
-												return 11;
-								}					
+    {break1} { 	
+		System.out.println("11");
+		return new Token(11);
+	}					
 
-  {switch1} { 	
-						this.pw.println("<switch,"+yytext()+">");
-												System.out.println("12");
-												return 12;
-								}
+    {switch1} { 	
+		System.out.println("12");
+		return new Token(12);
+	}
 
-  {case1} { 	
-						this.pw.println("<case,"+yytext()+">");
-												System.out.println("13");
-												return 13;
-								}
+    {case1} { 	
+		System.out.println("13");
+		return new Token(13);
+	}
 
-  {default1} { 	
-						this.pw.println("<default,"+yytext()+">");
-												System.out.println("14");
-												return 14;
-								}	
+    {default1} { 	
+		System.out.println("14");
+		return new Token(14);
+	}	
 
-  {true1} { 	
-						this.pw.println("<true,"+yytext()+">");
-												System.out.println("15");
-												return 15;
-								}	
+    {true1} { 	
+		System.out.println("15");
+		return new Token(15);
+	}	
 
-  {false1} { 	
-						this.pw.println("<false,"+yytext()+">");
-												System.out.println("16");
-												return 16;
-								}
-  {id} { 	
-												this.pw.println("<id,"+yytext()+">");
-												System.out.println("17");
-												return 17;
-								}								
-//estado que ignora los espacios y tabuladores
-{espacio} {}
+    {false1} { 	
+		System.out.println("16");
+		return new Token(16);
+	}
+	
+	{return1}	{
+		System.out.println("47");
+		return new Token(47);
+	}
+	
+	{id} { 	
+		System.out.println("17");
+		return new Token(17);
+	}								
+	
+	//estado que ignora los espacios y tabuladores
+	{espacio} {}
 					
-//estado que reconoce los imaginarios
- ({Decimal}"i" | {Entero}"i") {
-												this.pw.println("<Imaginario,"+yytext()+">");
-												System.out.println("20");
-												return 20;
-								}
-//estado que reconoce los decimales
- {Decimal} {							
-												this.pw.println("<Decimal,"+yytext()+">");
-												System.out.println("19");
-												return 19;
-								}
-//estado que reconoce los enteros
- {Entero}  {							
-								
-												this.pw.println("<Entero,"+yytext()+">");
-												System.out.println("18");
-												return 18;
-												 
-								}		
+	//estado que reconoce los decimales
+ 	{Decimal} {							
+		System.out.println("19");
+		return new Token(1,yytext(),19);
+	}
+	
+	//estado que reconoce los enteros
+ 	{Entero}  {														
+		System.out.println("18");
+		return new Token(0,yytext(),18);			
+	}		
+		
+	//estado que reconoce cadenas
+ 	{Cadena} {
+		System.out.println("21");
+		return new Token(2,yytext(),21);
+	}
+	
+	//estado que reconoce Operadores
+ 	{Amperson} {
+		System.out.println("22");
+		return new Token(22);
+	}
+	
+	//estado que reconoce Operadores de Asignación
+ 	{OpAsignacion } {
+		System.out.println("23");
+		return new Token(23);
+	}
+	
+	//estado que reconoce Operadores Aritméticos
+ 	{MasMas} {
+		System.out.println("24");
+		return new Token(24);
+	}
+	
+	//estado que reconoce Operadores Lógicos
+ 	{Mayor} {
+		System.out.println("25");
+		return new Token(25);
+		
+	}
 
-//estado que reconoce cadenas
- {Cadena} {
-												this.pw.println("<Cadena,"+yytext()+">");
-												System.out.println("21");
-												return 21;
-								}
-//estado que reconoce Operadores
- {Amperson} {
-												this.pw.println("<Simbolo,"+yytext()+">");
-												System.out.println("22");
-												return 22;
-								}
-//estado que reconoce Operadores de Asignación
- {OpAsignacion } {
-												this.pw.println("<OpAsignacion,"+yytext()+">");
-												System.out.println("23");
-												return 23;
-								}
-//estado que reconoce Operadores Aritméticos
- {OpAritmetico} {
-												this.pw.println("<OpAritmetico,"+yytext()+">");
-												System.out.println("24");
-												return 24;
-								}
-//estado que reconoce Operadores Lógicos
- {OpLogicos} {
-												this.pw.println("<OpLogico,"+yytext()+">");
-												System.out.println("25");
-												return 25;
-												
-								}
+ 	{ParentesisAbre} {
+		System.out.println("26");
+		return new Token(26);				
+	}
 
- {ParentesisAbre} {
-												this.pw.println("<PAbre,"+yytext()+">");
-												System.out.println("26");
-												return 26;
-												
-								}
- {ParentesisCierra} {
-												this.pw.println("<PCierra,"+yytext()+">");
-												System.out.println("27");
-												return 27;
-												
-								}
- {CorcheteAbre} {
-												this.pw.println("<CAbre,"+yytext()+">");
-												System.out.println("28");
-												return 28;
-												
-								}
- {CorcheteCierra} {
-												this.pw.println("<CCierra,"+yytext()+">");
-												System.out.println("29");
-												return 29;
-												
-								}
+ 	{ParentesisCierra} {	
+		System.out.println("27");
+		return new Token(27);											
+	}
 
- {LlaveAbre} {
-												this.pw.println("<LLaveAbre,"+yytext()+">");
-												System.out.println("30");
-												return 30;
+ 	{CorcheteAbre} {
+		System.out.println("28");
+		return new Token(28);		
+	}
+
+ 	{CorcheteCierra} {
+		System.out.println("29");
+		return new Token(29);		
+	}
+
+ 	{LlaveAbre} {
+		System.out.println("30");
+		return new Token(30);
+	}
+
+ 	{LlaveCierra} {
+		System.out.println("31");
+		return new Token(31);
+	}
+
+	{DosPuntos}	{
+		System.out.println("32");
+		return new Token(32);
+
+	}											
 												
-								}
- {LlaveCierra} {
-												this.pw.println("<LlaveCierra,"+yytext()+">");
-												System.out.println("31");
-												return 31;
-												
-
-											}
-
- {DosPuntos}	{
-												this.pw.println("<DosPuntos,"+yytext()+">");
-												System.out.println("32");
-												return 32;
-
-												}											
-												
- {PuntoYComa}	{
-												this.pw.println("<PuntoYComa,"+yytext()+">");
-												System.out.println("33");
-												return 33;
-
-											}
+ 	{PuntoYComa}	{
+		System.out.println("33");
+		return new Token(33);
+	}
 											
- {Coma}	{
-												this.pw.println("<Coma,"+yytext()+">");
-												System.out.println("34");
-												return 34;
+ 	{Coma}	{
+		System.out.println("34");
+		return new Token(34);
+	}
 
-											}
- {Or}	{
-												this.pw.println("<Or,"+yytext()+">");
-												System.out.println("35");
-												return 35;
+ 	{Or}	{
+		System.out.println("35");
+		return new Token(35);
+	}
 
-											}
- {And}	{
-												this.pw.println("<And,"+yytext()+">");
-												System.out.println("36");
-												return 36;
+ 	{And}	{
+		System.out.println("36");
+		return new Token(36);
+	}	
 
-											}	
- {MayorIgual}	{
-												this.pw.println("<MayorIgual,"+yytext()+">");
-												System.out.println("37");
-												return 37;
+ 	{MayorIgual}	{
+		System.out.println("37");
+		return new Token(37);
+	}
 
-											}
- {MenorIgual}	{
-												this.pw.println("<MenorIgual,"+yytext()+">");
-												System.out.println("38");
-												return 38;
+ 	{MenorIgual}	{
+		System.out.println("38");
+		return new Token(38);
+	}
 
-											}
- {Diferente}	{
-												this.pw.println("<Diferente,"+yytext()+">");
-												System.out.println("39");
-												return 39;
+ 	{Diferente}	{
+		System.out.println("39");
+		return new Token(39);
+	}
 
-											}
- {Igual}	{
-												this.pw.println("<Igual,"+yytext()+">");
-												System.out.println("40");
-												return 40;
+	{Igual}	{
+		System.out.println("40");
+		return new Token(40);
+	}
 
-											}	
- {Negado}	{
-												this.pw.println("<Negado,"+yytext()+">");
-												System.out.println("41");
-												return 41;
+ 	{Negado}	{
+		System.out.println("41");
+		return new Token(41);
+	}	
 
-											}												
- {Mas}	{
-												this.pw.println("<Mas,"+yytext()+">");
-												System.out.println("42");
-												return 42;
+ 	{Mas}	{
+		System.out.println("42");
+		return new Token(42);
+	}
 
-											}
- {Menos}	{
-												this.pw.println("<Menos,"+yytext()+">");
-												System.out.println("43");
-												return 43;
+ 	{Menos}	{
+		System.out.println("43");
+		return new Token(43);
+	}
 
-											}
- {Multiplicacion}	{
-												this.pw.println("<Multiplicacion,"+yytext()+">");
-												System.out.println("44");
-												return 44;
-
-											}
+ 	{Multiplicacion}	{
+		System.out.println("44");
+		return new Token(44);
+	}
 											
- {Modulo}	{
-												this.pw.println("<Modulo,"+yytext()+">");
-												System.out.println("45");
-												return 45;
-
-											}
+ 	{Modulo}	{
+		System.out.println("45");
+		return new Token(45);
+	}
 											
- {Division}	{
-												this.pw.println("<Division,"+yytext()+">");
-												System.out.println("46");
-												return 46;
+ 	{Division}	{
+		System.out.println("46");
+		return new Token(46);
+	}
 
-											}
+ 	{Menor} {
+		System.out.println("48");
+		return new Token(48);				
+	}	
+
+ 	{MenosMenos} {
+		System.out.println("49");
+		return new Token(49);
+	}																											
  . {System.out.println("La cadena no es reconocida");}
-}				
+}

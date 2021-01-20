@@ -1,8 +1,7 @@
 import java.util.Stack;
 import java.util.*;
 
-
-public class Parser{
+public class Parser {
 	static final int INT = 1;
 	static final int FLOAT = 2;
 	static final int CHAR = 3;
@@ -22,12 +21,13 @@ public class Parser{
 	static final int ID = 17;
 	static final int ENTERO = 18;
 	static final int DECIMAL = 19;
-	static final int IMAGINARIO = 20;
 	static final int CADENA = 21;
-	static final int OPERADORES = 22;
+	static final int AMPERSONN = 22;
 	static final int OPASIGNACION = 23;
-	static final int OPARITMETICO = 24;
-	static final int OPLOGICOS = 25;
+	static final int MASMAS = 24;
+	static final int MENOSMENOS = 49;
+	static final int MAYOR = 25;
+	static final int MENOR = 48;
 	static final int PARIZQ = 26;
 	static final int PARDER = 27;
 	static final int CORIZQ = 28;
@@ -49,557 +49,587 @@ public class Parser{
 	static final int MULTIPLICACION = 44;
 	static final int MODULO = 45;
 	static final int DIVISION = 46;
+	static final int RETURN = 47;
 	int currentToken;
 	Yylex lexer;
 
 	/**
 	 * _lexer Analizador léxico
 	 */
-	public Parser(Yylex _lexer){
+	public Parser(Yylex _lexer) {
 		this.lexer = _lexer;
+		try {
+			this.currentToken = lexer.yylex().clase;
+		} catch (Exception e) {
+			System.out.println("error");
+		}
 	}
-	
+
 	/**
 	 * Avanza el "currentToken"
 	 */
-	public void consumir()  {
-		try{
-			currentToken = lexer.yylex()
-		}catch(Exception e){
+	public void consumir() {
+		try {
+			currentToken = lexer.yylex().clase;
+		} catch (Exception e) {
 			System.out.println("ERROR");
 		}
-		
+
 	}
 
-	public void error() throws ParserException {
-		throw new ParserException("La cadena no es aceptada por la gramática");
+	public void error(String text) throws ParserException {
+		throw new ParserException(text + " [" + lexer.yytext() + "]" );
 	}
 
-
-	//PRODUCCIONES
-	void programa() throws ParserException{
+	// PRODUCCIONES
+	void programa() throws ParserException {
 		declaraciones();
 		funciones();
 	}
-	
-	void declaraciones(){
-		tipo();
-		lista_var();
-		if(currentToken == PUNTOYCOMA){
-			consumir();
-			declaraciones();
-		}else{
-			//error
+
+	void declaraciones() throws ParserException {
+		if (currentToken == INT || currentToken == FLOAT || currentToken == CHAR || currentToken == DOUBLE || currentToken == VOID) {
+			tipo();
+			lista_var();
+			if (currentToken == PUNTOYCOMA) {
+				consumir();
+				declaraciones();
+			} else {
+				error("Declaración inválida");
+			}
 		}
 	}
-	
-	void tipo(){
+
+	void tipo() throws ParserException {
 		basico();
 		compuesto();
 	}
-	
-	void basico(){
-		switch(currentToken){
-			case INT:
-				consumir();
-				break;
-			case FLOAT:
-				consumir();
-				break;
-			case CHAR:
-				consumir();
-				break;
-			case DOUBLE:
-				consumir();
-				break;
-			case VOID:
-				consumir();
-				break;
-			default:
-				break;
-				//error
+
+	void basico() throws ParserException {
+		if (currentToken == INT || currentToken == FLOAT || currentToken == CHAR || currentToken == DOUBLE || currentToken == VOID) {
+			consumir();
+		} else {
+			error("Tipo de dato inválido");
 		}
 	}
-	
-	void compuesto(){
-		if(currentToken == CORIZQ){
+
+	void compuesto() throws ParserException {
+		if (currentToken == CORIZQ) {
 			consumir();
-			if (currentToken == ENTERO){
+			if (currentToken == ENTERO) {
 				consumir();
-				if (currentToken == CORDER){
+				if (currentToken == CORDER) {
 					consumir();
-					compuesto(); 
-				}else{
-					//error
+					compuesto();
+				} else {
+					error("Esperaba ]");
 				}
-			}else{
-				//error
-			}			
-		}else{
-			//error
-		}
-		
-	}
-	
-	void lista_var(){
-		if(currentToken == ID){
-			consumir();
-			lista_varprim();
-		}else{
-			//error
-		}
-	}
-	
-	void lista_varprim(){
-		if(currentToken == COMA){
-			consumir();
-			if(currentToken == ID){
-				consumir();
-				lista_varprim();
-			}else{
-				//error
+			} else {
+				error("Número inválido");
 			}
 		}
+
 	}
-	
-	void funciones(){
-		if(currentToken == FUNC) {
+
+	void lista_var() throws ParserException {
+		if (currentToken == ID) {
+			consumir();
+			lista_varP();
+		} else {
+			error("Identificador inválido 1");
+		}
+	}
+
+	void lista_varP() throws ParserException {
+		if (currentToken == COMA) {
 			consumir();
 			if (currentToken == ID) {
 				consumir();
-				if (currentToken == PARIZQ){
+				lista_varP();
+			} else {
+				error("Identificador inválido 2");
+			}
+		}
+	}
+
+	void funciones() throws ParserException {
+		if (currentToken == FUNC) {
+			consumir();
+			tipo();
+			if (currentToken == ID) {
+				consumir();
+				if (currentToken == PARIZQ) {
 					consumir();
 					argumentos();
-					if (currentToken == PARDER){
+					if (currentToken == PARDER) {
 						consumir();
 						bloque();
 						funciones();
-					}else{
-						//error
+					} else {
+						error("Esperaba )");
 					}
-				}else{
-						//error
+				} else {
+					error("Esperaba (");
 				}
-			}else{
-				//error
+			} else {
+				error("Identificador inválido 3");
 			}
-		}else{
-			//error
+		}else {
+			
 		}
 	}
-	
-	void argumentos(){
-		lista_args();
+
+	void argumentos() throws ParserException {
+		if (currentToken == INT || currentToken == FLOAT || currentToken == CHAR || currentToken == DOUBLE || currentToken == VOID) {
+			lista_args();
+		}
 	}
-	
-	void lista_args() {
-		
+
+	void lista_args() throws ParserException {
 		tipo();
-		if (currentToken == ID){
+		if (currentToken == ID) {
 			consumir();
 			lista_argsP();
-				
-		}else {
-			//error
-			
+		} else {
+			error("Identificador inválido 4");
 		}
-		
 	}
-	
-	void lista_argsP() {
-		if (currentToken == COMA){
-			tipo();
+
+	void lista_argsP() throws ParserException {
+		if (currentToken == COMA) {
 			consumir();
-			if (currentToken == ID){
-				lista_argsP();
+			tipo();
+			if (currentToken == ID) {
 				consumir();
-			}else{				
-				//error
-				
+				lista_argsP();
+			} else {
+				error("Identificador inválido 5");
 			}
-			
 		}
-			
-			
 	}
-	
-	void bloque() {
-		if (currentToken == LLAIZQ){
+
+	void bloque() throws ParserException {
+		
+		if (currentToken == LLAIZQ) {
+			consumir();
 			declaraciones();
 			instrucciones();
-			consumir();
-			if (currentToken == LLADER){
+			if (currentToken == LLADER) {
 				consumir();
-			}else{
-				//error
+				
+			} else {
+				error("Esperaba }");
 			}
-			
-		}else{
-			
-			//error
-			
+		} else {
+			error("Esperaba {");
 		}
-	} 
-	
-	void instrucciones() {
-		
-		sentencia();
-		instruccionesP();
-		
 	}
-	
-	void instruccionesP() {
+
+	void instrucciones() throws ParserException {
 		
 		sentencia();
 		instruccionesP();
 	}
-	
-	void sentencia() {
+
+	void instruccionesP() throws ParserException {
 		
-		switch(currentToken){
+		switch (currentToken) {
+			case ID:
+			case IF:
+			case WHILE:
+			case DO:
+			case BREAK:
+			case LLAIZQ:
+			case RETURN:
+			case SWITCH:
+			
+				sentencia();
+				instruccionesP();
+				break;
+			default:
+				
+				break;
+		}
+
+	}
+
+	void sentencia() throws ParserException {
+		
+		switch (currentToken) {
 			case IF:
 				consumir();
-				if (currentToken == PARIZQ){
-					bool();
+				if (currentToken == PARIZQ) {
 					consumir();
-					if (currentToken == PARDER){
-						sentencia();
+					bool();
+					if (currentToken == PARDER) {
 						consumir();
-						if (currentToken == ELSE){
-							sentencia();
-							consumir();
-						}else{
-							//error
-						}
-					}else{
-						//error
+						
+						sentencia();
+						elseP();
+					} else {
+						error("Esperaba )");
 					}
-				}else{
-						//error
+				} else {
+					error("Esperaba (");
 				}
 				break;
-				
+
 			case WHILE:
-				if (currentToken == PARIZQ){
-					bool();
-					consumir();
-					
-					if (currentToken == PARDER){
-						sentencia();
-						consumir();
-					}else{
-						//error
-					}
-				}else{
-						//error
-				}
-				break;
-				
-			case DO:
-				sentencia();
 				consumir();
-				if (currentToken == WHILE){
+				if (currentToken == PARIZQ) {
 					consumir();
-					if (currentToken == PARIZQ){
-						bool();
+					bool();
+					if (currentToken == PARDER) {
 						consumir();
-						if(currentToken == PARDER){
-							consumir();
-							
-						}else{
-							//error
-						}
 						
-						
-					}else{
-						//error
+						sentencia();
+					} else {
+						error("Esperaba )");
 					}
-					
-				}else{
-					//error
+				} else {
+					error("Esperaba (");
 				}
 				break;
+
+			case DO:
+				consumir();
 				
-			case BREAK:
+				sentencia();
+				if (currentToken == WHILE) {
 					consumir();
-					if(currentToken == PUNTOYCOMA){
-						consumir();
-					}else{
-						//error
-					}
-					break;
-			
-			case SWITCH:
-					consumir();
-					
-					if(currentToken == PARIZQ){
+					if (currentToken == PARIZQ) {
 						consumir();
 						bool();
-						
-						if (currentToken == PARDER){
+						if (currentToken == PARDER) {
 							consumir();
-							
-							if(currentToken == LLAIZQ){
-								consumir();
-								casos();
-								
-								if(currentToken == LLADER){
-									consumir();
-									
-								}else{
-									//error
-								
-								}
-								
-							}else{
-								//error
-								
-							}
-							
-						}else{
-							//error
+						} else {
+							error("Esperaba )");
 						}
-					}else{
-						//error
+
+					} else {
+						error("Esperaba (");
 					}
-					break;
-					
-			default:
-					if (currentToken == ID){		//Para el caso de localizacion
-						localizacion();
+
+				} else {
+					error("Estructura de ciclo inválida");
+				}
+				break;
+
+			case BREAK:
+				consumir();
+				if (currentToken == PUNTOYCOMA) {
+					consumir();
+				} else {
+					error("Instrucción incompleta");
+				}
+				break;
+
+			case SWITCH:
+				consumir();
+				if (currentToken == PARIZQ) {
+					consumir();
+					bool();
+					if (currentToken == PARDER) {
 						consumir();
-						if(currentToken == OPASIGNACION){
-							bool();
-						}else{
-							//error
+						if (currentToken == LLAIZQ) {
+							consumir();
+							casos();
+							if (currentToken == LLADER) {
+								consumir();
+							} else {
+								error("Esperaba }");
+							}
+
+						} else {
+							error("Esperaba {");
 						}
-					}else if (currentToken == INT || FLOAT || CHAR || DOUBLE || VOID){	//para el caso de bloque
-						
-						bloque();
-						
-					}else{
-						//error
-						
+					} else {
+						error("Esperaba )");
 					}
-					break;
+				} else {
+					error("Esperaba (");
+				}
+				break;
+			case RETURN:
+				
+				consumir();
+				returnP();
+				
+				break;
+			default:
+				if (currentToken == ID) { // Para el caso de localizacion
+					localizacion();
+					if (currentToken == OPASIGNACION) {
+						consumir();
+						bool();
+						if (currentToken == PUNTOYCOMA) {
+							consumir();
+						}else{
+							error("Se esperaba ;");
+						}
+					} else {
+						error("Caracter inválido 1");
+					}
+				} else if (currentToken == LLAIZQ) { // para el caso de bloque
+					bloque();
+				} else {
+					error("Caracter inválido 2");
+
+				}
+				break;
 		}
 	}
-	
-	void casos(){
-		caso();
-		casos();
-		predeterminado();
-	}
-	
-	void caso(){
-		if (currentToken == CASE){
+
+	private void elseP() throws ParserException {
+		if (currentToken == ELSE) {
 			consumir();
-			switch(currentToken){
+			
+			sentencia();
+		}
+	}
+
+	private void returnP() throws ParserException {
+		
+		if (currentToken == PUNTOYCOMA) {
+			consumir();
+		} else if (currentToken == PARIZQ || currentToken == ID || currentToken == ENTERO || currentToken == CADENA || currentToken == DECIMAL || currentToken == TRUE || currentToken == FALSE || currentToken == NEGADO || currentToken == MENOS) {
+			
+			exp();
+			if(currentToken == PUNTOYCOMA){
+				
+				consumir();
+			} else {
+				error("Se esperaba ;");
+			}
+		}else{
+			error("Identificador inválido");
+		}
+	}
+
+	void casos() throws ParserException {
+		if (currentToken == CASE) {
+			caso();
+			casos();
+		} else if (currentToken == DEFAULT) {
+			predeterminado();
+		} else {
+			// ERROR
+		}
+	}
+
+	void caso() throws ParserException {
+		if (currentToken == CASE) {
+			consumir();
+			switch (currentToken) {
 				case ENTERO:
 					consumir();
-					if (currentToken == OPERADORES){
+					if (currentToken == DOSPUNTOS) {
 						consumir();
 					}
 					break;
 				case DECIMAL:
 					consumir();
-					if (currentToken == OPERADORES){
+					if (currentToken == DOSPUNTOS) {
 						consumir();
 					}
-					break;				
+					break;
 				default:
-					//error
+					error("Caracter inválido 3");
 					break;
 			}
-		}else{
-			//error
+		} else {
+			error("Caracter inválido 4");
 		}
 	}
-	
-	void predeterminado(){
-		if (currentToken == DEFAULT){
+
+	void predeterminado() throws ParserException {
+		if (currentToken == DEFAULT) {
 			consumir();
-			if (currentToken == DOSPUNTOS){
+			if (currentToken == DOSPUNTOS) {
 				consumir();
 				instrucciones();
-			}else{
-				//error
+			} else {
+				error("Caracter inválido 5");
 			}
-		}else{
-			//error
+		} else {
+			error("Caracter inválido 6");
 		}
 	}
-	
-	void bool(){
+
+	void bool() throws ParserException {
 		comb();
-		boolprim();
+		boolP();
 	}
-	
-	void boolprim(){
-		if (currentToken == OR)
+
+	void boolP() throws ParserException {
+		if (currentToken == OR) {
 			consumir();
 			comb();
-			boolprim();
+			boolP();
+		}
 	}
-	
-	void comb(){
+
+	void comb() throws ParserException {
 		igualdad();
-		combprim();
+		combP();
 	}
-	
-	void combprim(){
-		if (currentToken == AND){
+
+	void combP() throws ParserException {
+		if (currentToken == AND) {
 			consumir();
 			igualdad();
-			combprim();
+			combP();
 		}
 	}
 
-
-	void igualdad(){
+	void igualdad() throws ParserException {
 		rel();
-		igualdadprim();
+		igualdadP();
 	}
 
-	void igualdadprim() {
-		if (currentToken ==  (IGUAL || DIFERENTE)) { //Entran tanto == como !=
+	void igualdadP() throws ParserException {
+		if (currentToken == IGUAL || currentToken == DIFERENTE) { // Entran tanto == como !=
 			consumir();
 			rel();
-			igualdadprim();
+			igualdadP();
 		}
 	}
 
-	void rel() {
+	void rel() throws ParserException {
 		exp();
-		expprimprim();
+		expPP();
 	}
-	
-	void expprimprim() {
-		if(currentToken == (OPLOGICOS || MAYORIGUAL || MENORIGUAL)) {
-			termprim();
-			expprimprim();
+
+	void expPP() throws ParserException {
+		if (currentToken == MAYOR || currentToken == MENOR || currentToken == MAYORIGUAL || currentToken == MENORIGUAL) {
+			consumir();
+			exp();
 		}
 	}
-	
-	void exp() {
+
+	void exp() throws ParserException {
 		term();
-		expprim();
+		expP();
 	}
 
-	void expprim(){
-			termprim();
-			expprim();
-		
+	void expP() throws ParserException {
+		if (currentToken == MAS || currentToken == MENOS) {
+			termP();
+			expP();
+		}
+
 	}
 
-	void termprim(){
-		if( currentToken == (MAS || MENOS)) {
+	void termP() throws ParserException {
+		if (currentToken == MAS || currentToken == MENOS) {
 			consumir();
 			term();
-		}else{
-			//error
+		} else {
+			error("Caracter inválido 7");
 		}
 	}
 
-	void term() {
+	void term() throws ParserException {
 		unario();
-		termprimprim();
+		termPP();
 	}
 
-	void termprimprim() {
-		if( currentToken == (MULTIPLICACION || DIVISION || MODULO)){ //AFRONTA EL OJETE
-			unarioprim();
-			termprimprim();
+	void termPP() throws ParserException {
+		if (currentToken == MULTIPLICACION || currentToken == DIVISION || currentToken == MODULO) { // AFRONTA EL OJETE
+			unarioP();
+			termPP();
 		}
 	}
 
-	void unarioprim() {
-		if( currentToken == MULTIPLICACION || currentToken == DIVISION || currentToken == MODULO) {
+	void unarioP() throws ParserException {
+		if (currentToken == MULTIPLICACION || currentToken == DIVISION || currentToken == MODULO) {
 			consumir();
 			unario();
 		}
 	}
 
-	void unario() {
-		if (currentToken == NEGADO || currentToken == MENOS)) {
+	void unario() throws ParserException {
+		if (currentToken == NEGADO || currentToken == MENOS) {
 			consumir();
 			unario();
-		} else if (currentToken == PARIZQ || currentToken == ID || currentToken == ENTERO || currentToken == CADENA ||  currentToken == DECIMAL || currentToken == TRUE || currentToken == FALSE){
+		} else if (currentToken == PARIZQ || currentToken == ID || currentToken == ENTERO || currentToken == CADENA || currentToken == DECIMAL || currentToken == TRUE || currentToken == FALSE) {
+			
 			factor();
-		}else{
-			//error
+		} else {
+			error("Caracter inválido 8");
 		}
 	}
 
-	void factor() {
-		if(currentToken == PARIZQ) {
+	void factor() throws ParserException {
+		if (currentToken == PARIZQ) {
 			consumir();
 			bool();
-			if(currentToken == PARDER){
+			if (currentToken == PARDER) {
 				consumir();
-			}else{
-				//error
+			} else {
+				error("Caracter inválido 9");
 			}
-		} else if (currentToken == ENTERO || currentToken == CADENA || currentToken == TRUE || currentToken == FALSE) {
+		} else if (currentToken == ENTERO || currentToken == DECIMAL || currentToken == CADENA || currentToken == TRUE || currentToken == FALSE) {
 			consumir();
-		} else if (currentToken == ID ){
+		} else if (currentToken == ID) {
+			consumir();
+			if (currentToken == PARIZQ) {
 				consumir();
-				if(currentToken == PARIZQ) {
+				parametros();
+				if (currentToken == PARDER) {
 					consumir();
-					parametros();
-					if (currentToken == PARDER){
-						consumir();
-					} else {
-						//error
-					}
 				} else {
-					localizacion();
+					error("Esperaba )");
 				}
+			} else {
+
+				localizacionP();
+			}
 		} else {
-			//error
+			error("Identificador inválido 6");
 		}
 	}
 
-	void parametros() {
+	void parametros() throws ParserException {
 		if (currentToken == ENTERO || currentToken == CADENA || currentToken == TRUE || currentToken == FALSE || currentToken == PARIZQ || currentToken == ID) {
 			lista_param();
 		}
 	}
 
-	void lista_param() {
+	void lista_param() throws ParserException {
 		bool();
-		lista_paramprim();
+		lista_paramP();
 	}
 
-	void lista_paramprim() {
+	void lista_paramP() throws ParserException {
 		if (currentToken == COMA) {
 			consumir();
 			bool();
-			lista_paramprim();
+			lista_paramP();
 		}
 	}
 
-	void localizacion() {
-		if(currentToken == ID) {
+	void localizacion() throws ParserException {
+		if (currentToken == ID) {
 			consumir();
-			localizacionprim();
+			localizacionP();
 		} else {
-			//error
+			error("Identificador inválido 7");
 		}
 	}
 
-	void localizacionprim() {
-		if(currentToken == CORIZQ) {
+	void localizacionP() throws ParserException {
+		if (currentToken == CORIZQ) {
 			consumir();
 			bool();
-			if(currentToken == CORDER) {
+			if (currentToken == CORDER) {
 				consumir();
-				localizacionprim();
-			}else{
-				//error
+				localizacionP();
+			} else {
+				error("Esperaba ]");
 			}
-		}else{
-			//error
+		}else {
+			
 		}
 	}
 }
